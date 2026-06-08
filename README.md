@@ -1,3 +1,8 @@
+
+A deterministic execution layer that augments
+small local coding models by converting
+high-cost reasoning tasks into reliable tool operations.
+
 (User uses VS Code Gituhub Copilot Interface - LM Studio(ibm/granite-4-h-tiny), LM Studio LLM is set up as a custom endpoint in VS Code Github Copilot)
 MCP Service Needs to be compleated and needs to be correctly wired to LM studio so that it is functional.
 Will upgrade Workers once i have working pipeline.
