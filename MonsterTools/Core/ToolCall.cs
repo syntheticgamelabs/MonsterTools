@@ -2,28 +2,22 @@ using System.Text.Json;
 
 namespace MonsterTools.Core;
 
-public class ToolCall
+public sealed class ToolCall
 {
-    public string? tool { get; set; }
-    public Dictionary<string, object?> args { get; set; } = new();
+    public string tool { get; set; } = "";
 
-    public static ToolCall Parse(string json)
+    public Dictionary<string, object?> args
+        { get; set; } = new();
+
+    public static ToolCall Parse(
+        string response)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(json))
-                return new ToolCall();
-
-            var clean = json.Trim();
-
-            var result = JsonSerializer.Deserialize<ToolCall>(
-                clean,
-                new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
-
-            return result ?? new ToolCall();
+            return JsonSerializer
+                .Deserialize<ToolCall>(
+                    response)
+                ?? new ToolCall();
         }
         catch
         {

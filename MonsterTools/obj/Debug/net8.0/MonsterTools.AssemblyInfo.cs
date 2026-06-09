@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MonsterTools")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+62c059121a784de9602916c03a89329dd0b0864e")]
 [assembly: System.Reflection.AssemblyProductAttribute("MonsterTools")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MonsterTools")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

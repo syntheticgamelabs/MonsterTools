@@ -1,21 +1,35 @@
 namespace MonsterTools.Core;
 
-public class ToolRouter
+public static class ToolRouter
 {
-    private readonly ToolExecutor _executor;
-
-    public ToolRouter(ToolExecutor executor)
+    public static string BuildSystemPrompt()
     {
-        _executor = executor;
-    }
+        return """
+You are MonsterTools.
 
-    public ToolResult Run(
-        string toolName,
-        ToolRequest request)
-    {
-        return _executor.Execute(
-            toolName,
-            request
-        );
+You do not perform filesystem,
+workspace, search, build,
+validation, or project analysis
+yourself.
+
+You must select a tool.
+
+Available tools:
+
+workspace
+read_file
+write_file
+patch_file
+search
+build
+validation
+
+Respond ONLY with JSON:
+
+{
+  "tool":"tool_name",
+  "args":{}
+}
+""";
     }
 }

@@ -4,59 +4,102 @@ using System.Text.Json;
 
 namespace MonsterTools.Services;
 
-public class LMStudioService
+public sealed class LMStudioService
 {
     private readonly HttpClient _http;
-    private readonly string _baseUrl;
 
-    public LMStudioService()
+    public string BaseUrl { get; }
+    public string ModelName { get; }
+
+    public LMStudioService(
+        string baseUrl = "http://127.0.0.1:1234",
+        string modelName = "granite")
     {
-        _baseUrl = "http://127.0.0.1:1234";
-        _http = new HttpClient();
+        BaseUrl = baseUrl.TrimEnd('/');
+        ModelName = modelName;
+
+        _http = new HttpClient
+        {
+            Timeout = TimeSpan.FromMinutes(5)
+        };
     }
 
-    public string Ask(string prompt)
+    public async Task<string> AskAsync(
+        string systemPrompt,
+        string userPrompt,
+        double temperature = 0.1)
     {
-        var url = $"{_baseUrl}/v1/chat/completions";
-
         var payload = new
         {
-            model = "local-model",
-            messages = new[]
+            model = ModelName,
+            temperature,
+            messages = new object[]
             {
                 new
                 {
                     role = "system",
-                    content =
-                        "You are a strict tool router. " +
-                        "Return ONLY valid JSON in this format: " +
-                        "{ \"tool\": \"SearchWorker\", \"args\": { \"pattern\": \"...\", \"workspaceRoot\": \".\" } }. " +
-                        "If no tool is needed return { \"tool\": null, \"args\": {} }. " +
-                        "NEVER output explanations or text."
+                    content = systemPrompt
                 },
                 new
                 {
                     role = "user",
-                    content = prompt
+                    content = userPrompt
                 }
-            },
-            temperature = 0.1
+            }
         };
 
         var json = JsonSerializer.Serialize(payload);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = _http.PostAsync(url, content).Result;
-        var result = response.Content.ReadAsStringAsync().Result;
+        using var content =
+            new StringContent(
+                json,
+                Encoding.UTF8,
+                "application/json");
 
-        using var doc = JsonDocument.Parse(result);
+        var response =
+            await _http.PostAsync(
+                $"{BaseUrl}/v1/chat/completions",
+                content);
 
-        var output = doc.RootElement
+        response.EnsureSuccessStatusCode();
+
+        var result =
+            await response.Content.ReadAsStringAsync();
+
+        using var doc =
+            JsonDocument.Parse(result);
+
+        return doc.RootElement
             .GetProperty("choices")[0]
             .GetProperty("message")
             .GetProperty("content")
-            .GetString();
-
-        return output ?? "";
+            .GetString()
+            ?? string.Empty;
     }
+
+public async Task<bool> HealthCheckAsync()
+{
+    try
+    {
+        using var response =
+            await _http.GetAsync(
+                $"{BaseUrl}/v1/models");
+
+        return response.IsSuccessStatusCode;
+    }
+    catch
+    {
+        return false;
+    }
+}
+
+public async Task<string> Ask(
+    string prompt)
+{
+    return await AskAsync(
+        "You are MonsterTools.",
+        prompt,
+        0.1);
+}
+
 }

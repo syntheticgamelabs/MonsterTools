@@ -14,24 +14,25 @@ public class AgentLoop
         _dispatcher = new WorkerDispatcher(executor);
     }
 
-    public string Run(string prompt)
-    {
-        var response = _llm.Ask(prompt);
+public async Task<string> RunAsync(
+    string prompt,
+    string workspace)
+{
+    var response =
+        await _llm.AskAsync(
+            ToolRouter.BuildSystemPrompt(),
+            prompt);
 
-        var toolCall = ToolCall.Parse(response);
+    var toolCall =
+        ToolCall.Parse(response);
 
-        if (string.IsNullOrWhiteSpace(toolCall.tool))
-            return JsonSerializer.Serialize(new
-            {
-                success = false,
-                error = "NO TOOL SELECTED",
-                raw = response
-            });
+    var result =
+        _dispatcher.Dispatch(
+            toolCall.tool,
+            toolCall.args);
 
-        var result = _dispatcher.Dispatch(toolCall.tool, toolCall.args ?? new());
-
-        return JsonSerializer.Serialize(result);
-    }
+    return result.Output;
+}
 
     public ToolResult RunToolDirect(string tool, Dictionary<string, object?> args)
 {

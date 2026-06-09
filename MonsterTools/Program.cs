@@ -1,31 +1,61 @@
-﻿using MonsterTools.Core;
+﻿using MonsterTools.Api;
+using MonsterTools.Core;
 using MonsterTools.Services;
-using MonsterTools.Runner.Workers;
+using MonsterTools.Workers;
 
-Console.WriteLine("MonsterTools MCP Server Starting...");
+var builder =
+    WebApplication.CreateBuilder(args);
 
-// 1. Register workers (UNCHANGED)
-var workers = new IToolWorker[]
-{
-    new SearchWorker(),
-    new FileWorker(),
-    new ValidationWorker(),
-    new BuildWorker()
-};
+builder.Services.AddSingleton<
+    LMStudioService>();
 
-// 2. Core tool execution stack
-var executor = new ToolExecutor(workers);
+builder.Services.AddSingleton<
+    ReadFileWorker>();
 
-// 3. LM service still exists (for future hybrid mode, NOT used in MCP loop)
-var llm = new LMStudioService();
+builder.Services.AddSingleton<
+    WriteFileWorker>();
 
-// 4. Agent loop (ONLY used internally if you later extend LLM tool routing)
-var agent = new AgentLoop(llm, executor);
+builder.Services.AddSingleton<
+    PatchFileWorker>();
 
-// 5. MCP server wrapper (THIS is now the REAL entry point)
-var server = new McpServer(agent);
+builder.Services.AddSingleton<
+    SearchWorker>();
 
-Console.WriteLine("MCP Ready (STDIO mode)");
+builder.Services.AddSingleton<
+    BuildWorker>();
 
-// 6. HARD BLOCKING LOOP (MCP PIPE)
-server.Run();
+builder.Services.AddSingleton<
+    WorkspaceWorker>();
+
+builder.Services.AddSingleton<
+    ValidationWorker>();
+
+builder.Services.AddSingleton<
+    IEnumerable<IToolWorker>>(sp =>
+    [
+        sp.GetRequiredService<ReadFileWorker>(),
+        sp.GetRequiredService<WriteFileWorker>(),
+        sp.GetRequiredService<PatchFileWorker>(),
+        sp.GetRequiredService<SearchWorker>(),
+        sp.GetRequiredService<BuildWorker>(),
+        sp.GetRequiredService<WorkspaceWorker>(),
+        sp.GetRequiredService<ValidationWorker>()
+    ]);
+
+builder.Services.AddSingleton<
+    ToolExecutor>();
+
+builder.Services.AddSingleton<
+    WorkerDispatcher>();
+
+builder.Services.AddSingleton<
+    AgentLoop>();
+
+var app = builder.Build();
+
+app.MapHealth();
+app.MapExecuteTool();
+app.MapExecuteAgent();
+
+app.Run(
+    "http://0.0.0.0:8080");
